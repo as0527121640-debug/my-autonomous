@@ -28,23 +28,18 @@ jobs:
           TARGET_THREAD_URL: "https://mitmachim.top/topic/95538/%D7%A9%D7%99%D7%AA%D7%95%D7%A3-%D7%9E%D7%95%D7%91%D7%99%D7%93%D7%95%D7%A1-%D7%92%D7%A8%D7%A1%D7%AA-%D7%A0%D7%99%D7%A1%D7%99%D7%95%D7%9F-%D7%97%D7%99%D7%A0%D7%9D-%D7%A2%D7%93-%D7%A1%D7%95%D7%A3-%D7%91%D7%99%D7%9F-%D7%94%D7%96%D7%9E%D7%A0%D7%99%D7%9D/10"
         run: python scripts/read_agent.py
 
-      - name: Read summary
-        id: read_summary
+      - name: Create GitHub Issue
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           if [ -f summary.txt ]; then
-            echo "summary<<EOF" >> $GITHUB_OUTPUT
-            cat summary.txt >> $GITHUB_OUTPUT
-            echo "EOF" >> $GITHUB_OUTPUT
+            # יצירת תוכן ה-Issue עם כותרת מקדימה
+            echo "הנה מה שקרה בפורום לאחרונה:" > issue_body.txt
+            echo "" >> issue_body.txt
+            cat summary.txt >> issue_body.txt
+            
+            # יצירת ה-Issue דרך ה-CLI הרשמי
+            gh issue create --title "דוח סוכן AI: עדכון מהפורום (מתמחים טופ)" --body-file issue_body.txt
           else
-            echo "summary=לא נמצא מידע חדש" >> $GITHUB_OUTPUT
+            echo "לא נמצא קובץ סיכום, מדלג על יצירת Issue."
           fi
-
-      - name: Create GitHub Issue
-        uses: imjohnbo/issue-action@v3
-        with:
-          title: "דוח סוכן AI: עדכון מהפורום (מתמחים טופ)"
-          body: |
-            הנה מה שקרה בפורום לאחרונה:
-
-            ${{ steps.read_summary.outputs.summary }}
-          token: ${{ secrets.GITHUB_TOKEN }}

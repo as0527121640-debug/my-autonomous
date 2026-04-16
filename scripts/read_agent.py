@@ -47,6 +47,7 @@ async def scrape_thread(url):
 
 def analyze_thread(posts):
     """שימוש ב-Gemini כדי להבין את תוכן השרשור"""
+    import time
     if not posts:
         return "לא נמצאו הודעות לסריקה."
 
@@ -65,11 +66,17 @@ def analyze_thread(posts):
 
     model = genai.GenerativeModel("gemini-3.1-flash-lite-preview")
     
-    try:
-        response = model.generate_content(prompt)
-        return response.text
-    except Exception as e:
-        return f"שגיאה בניתוח ה-AI: {e}"
+    # ניסיון עד 3 פעמים במקרה של Timeout או עומס
+    for attempt in range(3):
+        try:
+            response = model.generate_content(prompt)
+            return response.text
+        except Exception as e:
+            if attempt < 2:
+                print(f"ניסיון {attempt + 1} נכשל, מנסה שוב בעוד 5 שניות... ({e})")
+                time.sleep(5)
+                continue
+            return f"שגיאה בניתוח ה-AI אחרי 3 ניסיונות: {e}"
 
 async def main():
     target_url = os.getenv("TARGET_THREAD_URL")

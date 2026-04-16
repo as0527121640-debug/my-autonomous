@@ -26,17 +26,6 @@ def generate_post_preview(version, release_body):
     return f"""**עדכון:**
 {version}
 
-**עדכון נתונים באמצעות יבוא קובץ חיצוני**
-ניתן ליבוא בשני דרכים - 
-
-* ממסך ההגדרות 
-* פתיחה ישירה של קובץ הZIP ישירות מסייר הקבצים של המכשיר [פתח באמצעות...].
-
-ניתן להוריד מהאתר בכל גרסה שלושה קבצים - 
-1. גרסה מלאה הכולל את מסד הנתונים, 
-2. גרסה קלה שכוללת  רק את האפליקציה ללא מסד נתונים, 
-3. את מסד הנתונים לבדו. 
-
 {content}
 
 **להורדה ישירה:**
@@ -46,7 +35,6 @@ def generate_post_preview(version, release_body):
 
 [לאתר](https://moovitdos.github.io/moovidos/#home)
 [לתגובות - ](https://mitmachim.top/post/1111350)
-![image](/assets/uploads/files/1776240923823-3c087c5b-9afb-40d5-acd4-9a9c78a964ad-image.png)
 """
 
 def create_approval_issue(version, body):

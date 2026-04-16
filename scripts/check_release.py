@@ -54,7 +54,7 @@ def create_approval_issue(version, body):
 גרסה חדשה נמצאה ב-Repository: `moovitdos/moovidos`.
 גרסה: **{version}**
 
-### תצוגה מקדימה של הפוסט שפורסם:
+### תצוגה מקדימה של הפוסט המתוכנן:
 ---
 {preview}
 ---
@@ -72,12 +72,13 @@ def create_approval_issue(version, body):
         subprocess.run([
             "gh", "issue", "create",
             "--title", title,
-            "--body", issue_body,
-            "--label", "release-trigger"
+            "--body", issue_body
         ], check=True)
         print(f"Issue created for version {version}")
+        return True
     except subprocess.CalledProcessError as e:
         print(f"Failed to create issue: {e}")
+        return False
 
 def main():
     # קריאת הגרסה האחרונה שטיפלנו בה
@@ -96,11 +97,12 @@ def main():
 
     if current_version != last_version:
         print(f"New version found: {current_version}")
-        create_approval_issue(current_version, release_body)
-        
-        # עדכון הקובץ המקומי
-        with open(TRACKING_FILE, "w") as f:
-            f.write(current_version)
+        if create_approval_issue(current_version, release_body):
+            # עדכון הקובץ המקומי רק אם האישיו נוצר בהצלחה
+            with open(TRACKING_FILE, "w") as f:
+                f.write(current_version)
+        else:
+            print("Skipping version update due to issue creation failure.")
     else:
         print(f"No new version. Current version {current_version} matches last handled.")
 

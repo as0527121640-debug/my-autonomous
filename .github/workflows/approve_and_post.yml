@@ -6,10 +6,10 @@ on:
 
 jobs:
   post-to-forum:
-    # מופעל רק אם התגובה היא "כן" או "שחרר" והאישיו מסומן כטריגר לרליס
+    # מופעל רק אם התגובה היא "כן" או "שחרר" והכותרת מתחילה ב-[אישור פרסום]
     if: |
       (github.event.comment.body == 'כן' || github.event.comment.body == 'שחרר') &&
-      contains(github.event.issue.labels.*.name, 'release-trigger')
+      startsWith(github.event.issue.title, '[אישור פרסום]')
     runs-on: ubuntu-22.04
     steps:
       - name: Checkout Code

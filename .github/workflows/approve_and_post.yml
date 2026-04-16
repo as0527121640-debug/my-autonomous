@@ -11,6 +11,9 @@ jobs:
       (github.event.comment.body == 'כן' || github.event.comment.body == 'שחרר') &&
       startsWith(github.event.issue.title, '[אישור פרסום]')
     runs-on: ubuntu-22.04
+    permissions:
+      issues: write
+      contents: read
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4

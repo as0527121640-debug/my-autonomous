@@ -85,17 +85,18 @@ async def post_to_forum(version):
             
             # 5. שליחה
             print("Submitting post...")
-            # כפתור השליחה בדרך כלל עם האטריביוט data-action="post"
-            await page.click('[data-action="post"]')
+            # משתמשים בסלקטור ספציפי יותר ומחפשים את הכפתור הגלוי
+            submit_button = page.locator('.composer [data-action="post"]:visible').first
+            await submit_button.click()
             
             # המתנה לסגירת ה-composer
-            await page.wait_for_selector('.composer', state="hidden")
+            await page.wait_for_selector('.composer', state="hidden", timeout=10000)
             print(f"Successfully posted update for {version}!")
             return True
 
         except Exception as e:
             print(f"Error during posting: {e}")
-            # צילום מסך לדיבאג (ישמר ב-GitHub Actions artifacts)
+            # צילום מסך לדיבאג
             await page.screenshot(path="debug_error.png")
             return False
         finally:

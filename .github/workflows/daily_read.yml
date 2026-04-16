@@ -1,0 +1,36 @@
+name: Daily Forum Reader Agent
+
+on:
+  schedule:
+    - cron: '0 8 * * *' # רץ בכל יום ב-8 בבוקר
+  workflow_dispatch: # מאפשר הפעלה ידנית מהאתר של GitHub
+
+jobs:
+  read-and-summarize:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+
+      - name: Install Dependencies
+        run: |
+          pip install -r requirements.txt
+          npx playwright install --with-deps chromium
+
+      - name: Run Agent
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          TARGET_THREAD_URL: "https://mitmachim.top/topic/95538/%D7%A9%D7%99%D7%AA%D7%95%D7%A3-%D7%9E%D7%95%D7%91%D7%99%D7%93%D7%95%D7%A1-%D7%92%D7%A8%D7%A1%D7%AA-%D7%A0%D7%99%D7%A1%D7%99%D7%95%D7%9F-%D7%97%D7%99%D7%A0%D7%9D-%D7%A2%D7%93-%D7%A1%D7%95%D7%A3-%D7%91%D7%99%D7%9F-%D7%94%D7%96%D7%9E%D7%A0%D7%99%D7%9D/10"
+        run: python scripts/read_agent.py
+
+      - name: Create GitHub Issue
+        uses: imjohnbo/issue-action@v3
+        with:
+          title: "דוח סוכן AI: עדכון מהפורום (מתמחים טופ)"
+          body: ${{ hashFiles('summary.txt') && format('הנה מה שקרה בפורום לאחרונה:\n\n{0}', readFile('summary.txt')) || 'לא נמצא מידע חדש' }}
+          token: ${{ secrets.GITHUB_TOKEN }}

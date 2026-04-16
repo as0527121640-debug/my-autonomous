@@ -1,0 +1,109 @@
+import os
+import sys
+import asyncio
+from playwright.async_api import async_playwright
+from dotenv import load_dotenv
+
+load_dotenv()
+
+# הגדרות פורום
+FORUM_URL = "https://mitmachim.top/topic/95538/"
+LOGIN_URL = "https://mitmachim.top/login"
+USERNAME = os.getenv("FORUM_USERNAME")
+PASSWORD = os.getenv("FORUM_PASSWORD")
+
+def generate_post_content(version):
+    """בניית תוכן הפוסט לפי התבנית שסופקה"""
+    return f"""**עדכון:**
+{version}
+
+**עדכון נתונים באמצעות יבוא קובץ חיצוני**
+ניתן ליבוא בשני דרכים - 
+
+* ממסך ההגדרות 
+* פתיחה ישירה של קובץ הZIP ישירות מסייר הקבצים של המכשיר [פתח באמצעות...].
+
+ניתן להוריד מהאתר בכל גרסה שלושה קבצים - 
+1. גרסה מלאה הכולל את מסד הנתונים, 
+2. גרסה קלה שכוללת  רק את האפליקציה ללא מסד נתונים, 
+3. את מסד הנתונים לבדו. 
+
+בכל שחרור יצוין מה עודכן - האפליקציה או מסד הנתונים. התקנה של עדכון תוכנה דרך האפליקציה יזהה זאת ויוריד במקרה הצורך רק את קובץ האפליקציה ללא מסד הנתונים.
+
+**להורדה ישירה:**
+[גרסה מלאה](https://github.com/moovitdos/moovidos/releases/download/{version}/moovidos_full_{version}.apk)
+[גרסה קלה ללא נתונים](https://github.com/moovitdos/moovidos/releases/download/{version}/moovidos_lite_{version}.apk)
+[מסד נתונים ליבוא ידני](https://github.com/moovitdos/moovidos/releases/download/{version}/transport_v8.db.zip)
+
+[לאתר](https://moovitdos.github.io/moovidos/#home)
+[לתגובות - ](https://mitmachim.top/post/1111350)
+![3c087c5b-9afb-40d5-acd4-9a9c78a964ad-image.png](/assets/uploads/files/1776240923823-3c087c5b-9afb-40d5-acd4-9a9c78a964ad-image.png)
+"""
+
+async def post_to_forum(version):
+    if not USERNAME or not PASSWORD:
+        print("Error: Missing forum credentials.")
+        return False
+
+    async with async_playwright() as p:
+        # הרצה ב-headless עם Agent אנושי כדי למנוע חסימות
+        browser = await p.chromium.launch(headless=True)
+        context = await browser.new_context(
+            user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36"
+        )
+        page = await context.new_page()
+
+        try:
+            # 1. התחברות
+            print("Logging in to forum...")
+            await page.goto(LOGIN_URL)
+            await page.fill('input[name="username"]', USERNAME)
+            await page.fill('input[name="password"]', PASSWORD)
+            await page.click('#login')
+            
+            # המתנה לוודא שהתחברנו (בדיקת אלמנט logout או שם משתמש)
+            await page.wait_for_load_state("networkidle")
+            
+            # 2. מעבר לשרשור
+            print(f"Navigating to thread: {FORUM_URL}")
+            await page.goto(FORUM_URL)
+            await page.wait_for_load_state("networkidle")
+
+            # 3. פתיחת עורך התגובה
+            # כפתור ה-Reply ב-NodeBB בדרך כלל עם האטריביוט component="topic/reply"
+            print("Opening reply editor...")
+            await page.click('[component="topic/reply"]')
+            
+            # המתנה להופעת תיבת הטקסט
+            await page.wait_for_selector('.composer .write')
+            
+            # 4. כתיבת פוסט
+            print("Typing content...")
+            content = generate_post_content(version)
+            await page.fill('.composer .write', content)
+            
+            # 5. שליחה
+            print("Submitting post...")
+            # כפתור השליחה בדרך כלל עם האטריביוט data-action="post"
+            await page.click('[data-action="post"]')
+            
+            # המתנה לסגירת ה-composer
+            await page.wait_for_selector('.composer', state="hidden")
+            print(f"Successfully posted update for {version}!")
+            return True
+
+        except Exception as e:
+            print(f"Error during posting: {e}")
+            # צילום מסך לדיבאג (ישמר ב-GitHub Actions artifacts)
+            await page.screenshot(path="debug_error.png")
+            return False
+        finally:
+            await browser.close()
+
+if __name__ == "__main__":
+    if len(sys.argv) < 2:
+        print("Usage: python post_to_forum.py <version>")
+        sys.exit(1)
+    
+    ver = sys.argv[1]
+    asyncio.run(post_to_forum(ver))

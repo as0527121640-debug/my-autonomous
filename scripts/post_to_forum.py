@@ -12,8 +12,21 @@ LOGIN_URL = "https://mitmachim.top/login"
 USERNAME = os.getenv("FORUM_USERNAME")
 PASSWORD = os.getenv("FORUM_PASSWORD")
 
+def get_release_body(version):
+    """משיכת תוכן הרליס מ-GitHub API לפי מספר גרסה"""
+    import requests
+    url = f"https://api.github.com/repos/moovitdos/moovidos/releases/tags/{version}"
+    response = requests.get(url)
+    if response.status_code == 200:
+        return response.json().get("body", "")
+    return ""
+
 def generate_post_content(version):
-    """בניית תוכן הפוסט לפי התבנית שסופקה"""
+    """בניית תוכן הפוסט לפי התבנית עם התוכן הדינמי מ-GitHub"""
+    release_body = get_release_body(version)
+    # לוקח רק את החלק של התיאור לפני הקישורים אם יש מפריד ---
+    content = release_body.split("---")[0].strip() if release_body else "אין תיאור זמין לרליס זה."
+    
     return f"""**עדכון:**
 {version}
 
@@ -28,7 +41,7 @@ def generate_post_content(version):
 2. גרסה קלה שכוללת  רק את האפליקציה ללא מסד נתונים, 
 3. את מסד הנתונים לבדו. 
 
-בכל שחרור יצוין מה עודכן - האפליקציה או מסד הנתונים. התקנה של עדכון תוכנה דרך האפליקציה יזהה זאת ויוריד במקרה הצורך רק את קובץ האפליקציה ללא מסד הנתונים.
+{content}
 
 **להורדה ישירה:**
 [גרסה מלאה](https://github.com/moovitdos/moovidos/releases/download/{version}/moovidos_full_{version}.apk)
@@ -37,7 +50,7 @@ def generate_post_content(version):
 
 [לאתר](https://moovitdos.github.io/moovidos/#home)
 [לתגובות - ](https://mitmachim.top/post/1111350)
-![3c087c5b-9afb-40d5-acd4-9a9c78a964ad-image.png](/assets/uploads/files/1776240923823-3c087c5b-9afb-40d5-acd4-9a9c78a964ad-image.png)
+![image](/assets/uploads/files/1776240923823-3c087c5b-9afb-40d5-acd4-9a9c78a964ad-image.png)
 """
 
 async def post_to_forum(version):

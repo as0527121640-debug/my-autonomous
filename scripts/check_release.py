@@ -18,8 +18,11 @@ def get_latest_release():
         print(f"Error fetching release: {response.status_code}")
         return None
 
-def generate_post_preview(version):
-    """בניית תצוגה מקדימה של הפוסט לפי התבנית"""
+def generate_post_preview(version, release_body):
+    """בניית תצוגה מקדימה של הפוסט עם תוכן ה-Release האמיתי"""
+    # הסרת קישורים כפולים אם קיימים בתיאור המקורי (אופציונלי)
+    content = release_body.split("---")[0].strip() # לוקח רק את החלק של התיאור לפני הקישורים אם יש מפריד
+    
     return f"""**עדכון:**
 {version}
 
@@ -34,7 +37,7 @@ def generate_post_preview(version):
 2. גרסה קלה שכוללת  רק את האפליקציה ללא מסד נתונים, 
 3. את מסד הנתונים לבדו. 
 
-בכל שחרור יצוין מה עודכן - האפליקציה או מסד הנתונים. התקנה של עדכון תוכנה דרך האפליקציה יזהה זאת ויוריד במקרה הצורך רק את קובץ האפליקציה ללא מסד הנתונים.
+{content}
 
 **להורדה ישירה:**
 [גרסה מלאה](https://github.com/moovitdos/moovidos/releases/download/{version}/moovidos_full_{version}.apk)
@@ -48,7 +51,7 @@ def generate_post_preview(version):
 
 def create_approval_issue(version, body):
     title = f"[אישור פרסום] גרסה חדשה שוחררה: {version}"
-    preview = generate_post_preview(version)
+    preview = generate_post_preview(version, body)
     
     issue_body = f"""
 גרסה חדשה נמצאה ב-Repository: `moovitdos/moovidos`.
@@ -61,11 +64,6 @@ def create_approval_issue(version, body):
 
 **האם ברצונך לפרסם את העדכון הזה בפורום "מתמחים טופ"?**
 הגיב **"כן"** או **"שחרר"** כדי להתחיל בפרסום האוטומטי.
-
-<details>
-<summary>פרטי ה-Release המקוריים מ-GitHub</summary>
-{body}
-</details>
 """
     # שימוש ב-GitHub CLI ליצירת ה-Issue
     try:
